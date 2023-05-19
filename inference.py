@@ -1,6 +1,6 @@
 import torch
 from dataset import CellDataset, val_transform
-from unet2 import UNet
+from unet import UNet
 from argparse import ArgumentParser
 
 
@@ -12,7 +12,7 @@ if __name__ == "__main__":
         default="/home/s522r/Desktop/AIHERO/2.5/hackathon_health_data/train",
     )
     parser.add_argument("--from_checkpoint", type=str, 
-                        default='./lightning_logs/version_80/checkpoints/keep_epoch=3-step=400.ckpt')
+                        default='./lightning_logs/version_80/checkpoints/epoch=99-step=10000.ckpt')
     parser.add_argument("--pred_dir", default='./pred')
     
     args = parser.parse_args()

@@ -1,4 +1,3 @@
-import torch
 from torch.utils.data import Dataset
 import tifffile
 from pathlib import Path
@@ -25,10 +24,6 @@ class CellDataset(Dataset):
             self.img_files = sorted(list(root_dir.glob(r'[de]'+"/*.tif")))
             self.mask_files = None
 
-        '''if not semantic_seg:
-            self.img_files = self.img_files[:50]
-            self.mask_files = self.mask_files[:50]'''
-
     def __getitem__(self, idx):
         img = tifffile.imread(self.img_files[idx])
         mask = tifffile.imread(self.mask_files[idx]).astype(np.float32) if self.mask_files else None
@@ -50,7 +45,6 @@ class CellDataset(Dataset):
                     eroded_instance = cv2.erode(instance_mask, kernel, iterations=4)
                     eroded_instances += eroded_instance
                 
-                #mask = mask.clip(0, 1) + eroded_instances # 1 = border, 2 = core
                 mask = np.where(eroded_instances==1, 1, 2*mask.clip(0, 1)) # 1 = core, 2 = border
 
 
@@ -61,7 +55,7 @@ class CellDataset(Dataset):
                 mask = transformed['mask'].long()
 
         if self.mask_files and not self.border_core:
-            mask = mask.unsqueeze(0)#.long()
+            mask = mask.unsqueeze(0)
 
         return img, mask, orig_size, file_name
 
@@ -71,7 +65,6 @@ class CellDataset(Dataset):
 
 def train_transform():
     transform = A.Compose([
-            #A.RandomCrop(width=512, height=512),
             A.Resize(512, 512, interpolation=cv2.INTER_NEAREST),
             A.HorizontalFlip(p=0.5),
             A.RandomBrightnessContrast(p=0.2),
@@ -84,19 +77,9 @@ def train_transform():
 def val_transform():
     transform = A.Compose([
             A.Resize(512, 512, interpolation=cv2.INTER_NEAREST),
-            #A.CenterCrop(width=512, height=512),
-            #A.HorizontalFlip(p=0.5),
-            #A.RandomBrightnessContrast(p=0.2),
             A.Normalize(0.5, 0.25),
             ToTensorV2()
         ])
     
     return transform
 
-    
-
-if __name__ == "__main__":
-
-    ds = CellDataset("/home/s522r/Desktop/AIHERO/2.5/tracking_one_in_a_million/ctc_format")
-    import IPython
-    IPython.embed()
