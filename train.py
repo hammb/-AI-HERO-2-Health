@@ -11,7 +11,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--root_dir",
         type=str,
-        default="/home/s522r/Desktop/AIHERO/2.5/hackathon_health_data/train",
+        default="/hkfs/work/workspace/scratch/hgf_pdv3669-health_train_data/train",
     )
     parser.add_argument("--num_epochs", type=int, default=100)
 

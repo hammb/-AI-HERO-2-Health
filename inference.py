@@ -9,7 +9,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--root_dir",
         type=str,
-        default="/home/s522r/Desktop/AIHERO/2.5/hackathon_health_data/train",
+        default="/hkfs/work/workspace/scratch/hgf_pdv3669-health_train_data/train",
     )
     parser.add_argument("--from_checkpoint", type=str, 
                         default='./lightning_logs/version_80/checkpoints/epoch=99-step=10000.ckpt')
