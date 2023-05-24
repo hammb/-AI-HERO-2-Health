@@ -16,4 +16,4 @@ export OMP_NUM_THREADS=1
 group_workspace=/home/hk-project-test-aihero2/hgf_pdv3669
 
 source ${group_workspace}/health_baseline_env/bin/activate
-python ${group_workspace}/AI-HERO-Health/train.py
+python ${group_workspace}/ai-hero2/train.py
