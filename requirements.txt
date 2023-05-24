@@ -1,6 +1,6 @@
 torch
+torchvision
 tifffile
 albumentations
-torchvision
 pytorch-lightning
 git+https://github.com/MIC-DKFZ/acvl_utils
