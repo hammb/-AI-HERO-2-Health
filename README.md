@@ -87,14 +87,13 @@ The baseline implements a border - core segmentation approach. A U-Net is traine
 
 The content of the different files is as follows:
 
-- `dataset.py`: Implements a Pytorch Dataset that loads the challenge data, additionally preprocesses the data to obtain a border - core represeantation of the ground truth masks
+- `dataset.py`: Implements a Pytorch Dataset that loads the challenge data, additionally preprocesses the data to obtain a border - core representation of the ground truth masks
 - `unet.py`: Implements a U-Net in pytorch lightning, additionally implements the function ```predict_instance_segmentation_from_border_core``` that performs the postprocessing.
 - `train.py`: Implements a training pipeline, logs metrics in a csv file, saves the current last checkpoint
 - `inference.py`: Loads the model weights of a trained model and runs inference including the postprocessing to obtain an instance segmentation
-- `eval.py`: Computes the Instance Dice for a given directories containing predictions and ground truths
-- `training`: directory holding bash scripts for submitting on HAICORE, see [Training on HOREKA](#training-on-horeka)
-- `evaluation`: directory holding bash scripts for testing the evaluation on HAICORE, see [Test your Submission](#test-the-final-evaluation)
+- `eval.py`: Computes the Instance Dice for given directories containing predictions and ground truth data
 
+Additionally, bash scripts for running the training, inference and evaluation are available.
 
 # HOREKA Setup
 
