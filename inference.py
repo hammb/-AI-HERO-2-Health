@@ -12,7 +12,7 @@ if __name__ == "__main__":
         default="/hkfs/work/workspace/scratch/hgf_pdv3669-health_train_data/train",
     )
     parser.add_argument("--from_checkpoint", type=str, 
-                        default='./lightning_logs/version_80/checkpoints/epoch=99-step=10000.ckpt')
+                        default='./lightning_logs/version_0/checkpoints/epoch=99-step=10000.ckpt')
     parser.add_argument("--pred_dir", default='./pred')
     
     args = parser.parse_args()
