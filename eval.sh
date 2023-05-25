@@ -3,7 +3,6 @@
 #SBATCH --job-name=AI-HERO_health_baseline_evaluation
 #SBATCH --partition=cpuonly
 #SBATCH --nodes=1
-#SBATCH --gres=gpu:4
 #SBATCH --ntasks=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=152
