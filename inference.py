@@ -14,15 +14,17 @@ if __name__ == "__main__":
     parser.add_argument("--from_checkpoint", type=str, 
                         default='./lightning_logs/version_0/checkpoints/epoch=99-step=10000.ckpt')
     parser.add_argument("--pred_dir", default='./pred')
+    parser.add_argument("--split", default="val", help="val=sequence c")
     
     args = parser.parse_args()
 
     device = torch.device("cuda")
     root_dir = args.root_dir
     pred_dir = args.pred_dir
+    split = args.split
 
     model = UNet()
-    instance_seg_val_data = CellDataset(root_dir, split="val", transform=val_transform(), border_core=False)
+    instance_seg_val_data = CellDataset(root_dir, split=split, transform=val_transform(), border_core=False)
     instance_seg_valloader = torch.utils.data.DataLoader(
         instance_seg_val_data, batch_size=16, shuffle=False, num_workers=12
     )
