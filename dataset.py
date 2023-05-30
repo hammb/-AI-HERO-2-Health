@@ -60,7 +60,7 @@ class CellDataset(Dataset):
         if self.mask_files and not self.border_core:
             mask = mask.unsqueeze(0)
 
-        return img, mask, orig_size, file_name
+        return img, mask if mask else 1, orig_size, file_name
 
     def __len__(self):
         return len(self.img_files)
