@@ -49,7 +49,10 @@ class CellDataset(Dataset):
 
 
         if self.transform is not None:
-            transformed = self.transform(image=img, mask=mask)
+            if self.mask_files:
+                transformed = self.transform(image=img, mask=mask)
+            else:
+                transformed = self.transform(image=img)
             img = transformed['image']
             if self.mask_files:
                 mask = transformed['mask'].long()
