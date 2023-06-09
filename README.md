@@ -109,7 +109,7 @@ For the following steps please substitute `<YOUR_GROUP_NAME>` by your group ID.
 Clone this repository to your workspace. 
 
     cd /hkfs/work/workspace/scratch/hgf_pdv3669-<YOUR_GROUP_NAME>
-    git clone https://github.com/XXXXXX.git
+    git clone https://github.com/Helmholtz-AI-Energy/AI-HERO-2-Health.git
 
 ### Set up your environment
 
