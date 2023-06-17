@@ -134,8 +134,9 @@ You can adapt all other flags if you want. Find more information about `sbatch` 
 
 In the script you need to adapt the path to your group workspace in lines 11 and 16. Then submit your job via:
 
-    sbatch train.sh
+    sbatch train.sh -r aihero-gpu
 
+Make sure to use the `-r aihero-gpu` flag to get on the reserved nodes of the cluster. Use `-r aihero` for cpu-only jobs.
 
 # Useful commands for monitoring your jobs on HOREKA
 
@@ -171,7 +172,7 @@ Once the border-core semantic segmentation model is trained the final instance s
 
 Adapt the paths to your group workspace and run it via:
 
-    sbatch inference.sh
+    sbatch inference.sh -r aihero-gpu
 
 # Evaluation
 
@@ -179,4 +180,4 @@ To calculate the Instance Dice for your predictions you can use `eval.py`. In th
 
 Adapt the paths to your group workspace and run it via:
 
-    sbatch eval.sh
+    sbatch eval.sh -r aihero
