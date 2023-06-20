@@ -39,6 +39,8 @@ class CellDataset(Dataset):
             img = transformed['image']
             if self.mask_files:
                 mask = transformed['mask'].long()
+        
+        img = np.tile(img, (3,1,1))
 
         return img, mask, orig_size, file_name
 
