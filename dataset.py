@@ -4,8 +4,6 @@ from pathlib import Path
 import albumentations as A
 from albumentations.pytorch.transforms import ToTensorV2
 import numpy as np
-import cv2
-
 
 class CellDataset(Dataset):
     def __init__(self, root_dir, border_core=False, split="train", transform=None):
@@ -40,6 +38,7 @@ class CellDataset(Dataset):
             if self.mask_files:
                 mask = transformed['mask'].long()
         
+        img = img.half()
         img = np.tile(img, (3,1,1))
 
         return img, mask, orig_size, file_name
@@ -50,10 +49,8 @@ class CellDataset(Dataset):
 
 def train_transform():
     transform = A.Compose([
-            A.Resize(512, 512, interpolation=cv2.INTER_NEAREST),
             A.HorizontalFlip(p=0.5),
             A.RandomBrightnessContrast(p=0.2),
-            A.Normalize(0.5, 0.25),
             ToTensorV2()
         ])
     
@@ -61,8 +58,6 @@ def train_transform():
 
 def val_transform():
     transform = A.Compose([
-            A.Resize(512, 512, interpolation=cv2.INTER_NEAREST),
-            A.Normalize(0.5, 0.25),
             ToTensorV2()
         ])
     

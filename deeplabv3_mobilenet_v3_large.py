@@ -7,7 +7,7 @@ import torch.nn.functional as F
 import cv2
 import tifffile
 import os
-from torchmetrics.classification import JaccardIndex as IoU
+from torchmetrics.classification import MulticlassJaccardIndex as IoU
 from acvl_utils.instance_segmentation.instance_as_semantic_seg import convert_semantic_to_instanceseg_mp
 from torchvision.models.segmentation import deeplabv3_mobilenet_v3_large
 
@@ -20,16 +20,21 @@ class CombinedLoss(nn.Module):
     def forward(self, inputs, targets, smooth=1):
         # One-hot encoding of targets
         targets_one_hot = F.one_hot(targets, num_classes=inputs.shape[1]).permute(0, 3, 1, 2).float().to(self.device)
-        
-        # First let's calculate Dice Loss
-        intersection = (inputs * targets_one_hot).sum()
-        dice_score = (2. * intersection + smooth) / (inputs.sum() + targets_one_hot.sum() + smooth)
-        dice_loss = 1 - dice_score
 
-        # Now let's calculate Cross Entropy Loss
+        targets_no_bg = targets_one_hot[:, 1:]
+
+        # Apply sigmoid function to convert outputs into probabilities for soft Dice loss
+        inputs_soft = torch.softmax(inputs, dim=1)[:, 1:]
+
+        # Calculate Soft Dice Loss excluding background
+        intersection = (inputs_soft * targets_no_bg).sum((0,1,2,3), keepdim=True)
+        dice_score = (2. * intersection + smooth) / (inputs_soft.sum((0,1,2,3), keepdim=True) + targets_no_bg.sum((0,1,2,3), keepdim=True) + smooth)
+        dice_loss = 1 - dice_score.mean()
+
+        # Calculate Cross Entropy Loss
         CE_loss = nn.CrossEntropyLoss(weight=self.weight)(inputs, targets)
 
-        # Combining both losses
+        # Combine both losses
         combined_loss = 0.5 * CE_loss + 0.5 * dice_loss
 
         return combined_loss
@@ -38,14 +43,21 @@ class CombinedLoss(nn.Module):
 class DeepLab(pl.LightningModule):
     def __init__(self, pretrained=True, num_classes=3, device='cuda'):
         super(DeepLab, self).__init__()
-        self.model = deeplabv3_mobilenet_v3_large(pretrained=pretrained)
+        if pretrained:
+            self.model = deeplabv3_mobilenet_v3_large(pretrained=pretrained)
+        else:
+            self.model = deeplabv3_mobilenet_v3_large(weights=None)
+
         self.model.classifier[4] = nn.Conv2d(256, num_classes, kernel_size=(1, 1), stride=(1, 1))
 
         # Metrics
-        self.iou = IoU(task='multiclass', num_classes=num_classes)
+        self.iou = IoU(task='multiclass', num_classes=num_classes, ignore_index=0)
 
         # Loss
         self.criterion = CombinedLoss(weight=torch.tensor([1.0, 1.0, 2.0]).to(device), device=device)
+
+        # Adding a softmax layer
+        self.softmax = nn.Softmax(dim=1)
 
     def forward(self, x):
         return self.model(x)['out']
@@ -66,7 +78,7 @@ class DeepLab(pl.LightningModule):
         self.log('val_iou', iou, prog_bar=True)
 
     def configure_optimizers(self):
-        optimizer = optim.Adam(self.parameters(), lr=0.001)
+        optimizer = optim.AdamW(self.parameters(), lr=1e-4)
         scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=100)
         return [optimizer], [scheduler]
 
