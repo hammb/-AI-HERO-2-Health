@@ -1,6 +1,6 @@
 import torch
 from dataset import CellDataset, test_transform
-from deeplabv3_mobilenet_v3_large import DeepLab
+from deeplabv3_mobilenet_v3_large import ResDeepLab
 from argparse import ArgumentParser
 import glob
 import torch
@@ -16,12 +16,12 @@ if __name__ == "__main__":
     parser.add_argument(
         "--root_dir",
         type=str,
-        default="/home/lost",
+        default="/hkfs/work/workspace/scratch/hgf_pdv3669-health_train_data/train",
     )
     parser.add_argument("--from_checkpoint", type=str, 
-                        default='./models/submission1') # must be directory
-    parser.add_argument("--pred_dir", default='./pred')
-    parser.add_argument("--split", default="test", help="test")
+                        default='/hkfs/work/workspace/scratch/hgf_pdv3669-H2/-AI-HERO-2-Health/models/submission_res') # must be directory
+    parser.add_argument("--pred_dir", default='./pred_res')
+    parser.add_argument("--split", default="val", help="choose the split (train, val, test)")
     
     args = parser.parse_args()
 
@@ -32,9 +32,9 @@ if __name__ == "__main__":
     checkpoint_dir = args.from_checkpoint
     assert os.path.isdir(checkpoint_dir), "checkpoint_dir must be a directory"
 
-    batch_size = 64
+    batch_size = 128
 
-    model = DeepLab().half().to('cuda')
+    model = ResDeepLab().half().to('cuda')
     instance_seg_test_data = CellDataset(root_dir, split=split, transform=test_transform(), border_core=False)
     instance_seg_testloader = torch.utils.data.DataLoader(
         instance_seg_test_data, batch_size=batch_size, shuffle=False, num_workers=32
@@ -43,15 +43,15 @@ if __name__ == "__main__":
     # find all checkpoints in the checkpoint_dir
     checkpoints = glob.glob(checkpoint_dir + "/*.ckpt")
 
-    for batch, _, file_name in instance_seg_testloader:
-        logits = torch.zeros(len(checkpoints), batch_size, 3, 512, 512)
+    for batch, _, _, file_name in instance_seg_testloader:
+        logits = []
 
         for idx, checkpoint in enumerate(checkpoints):
             model.load_state_dict(torch.load(checkpoint)["state_dict"])
-            logits[idx] = model.predict_border_core_logits(batch)
+            logits.append(model.predict_border_core_logits(batch))
 
         # Average the logits 
-        pred = torch.argmax(torch.mean(logits, dim=0), 1)
+        pred = torch.argmax(torch.mean(torch.stack(logits), dim=0), 1)
 
         # convert to instance segmentation
         for i in range(pred.shape[0]):      

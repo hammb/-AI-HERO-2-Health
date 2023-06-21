@@ -10,6 +10,7 @@ import os
 from torchmetrics.classification import MulticlassJaccardIndex as IoU
 from acvl_utils.instance_segmentation.instance_as_semantic_seg import convert_semantic_to_instanceseg_mp
 from torchvision.models.segmentation import deeplabv3_mobilenet_v3_large
+from pytorch_lightning.callbacks import ModelCheckpoint
 
 
 class ResDoubleConvBlock(nn.Module):
@@ -111,8 +112,9 @@ class DeepLab(pl.LightningModule):
         # Metrics
         self.iou = IoU(task='multiclass', num_classes=out_channels, ignore_index=0)
 
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         # Loss
-        self.criterion = CombinedLoss(weight=torch.tensor([1.0, 1.0, 2.0]).to("cuda"), device="cuda")
+        self.criterion = CombinedLoss(weight=torch.tensor([1.0, 1.0, 2.0]).to(device), device=device)
 
     def forward(self, x):
         enc1 = self.encoder1(x)
@@ -171,12 +173,11 @@ class DeepLab(pl.LightningModule):
         with torch.no_grad():
             return self(batch.to('cuda') / 255.)
 
-
     def predict_instance_segmentation_from_border_core(self, dataloader, pred_dir='./preds'):
         self.eval()
         with torch.no_grad():
             
-            for batch, _, file_name in dataloader:
+            for batch, _, _, file_name in dataloader:
                 # Pass the input tensor through the network to obtain the predicted output tensor
                 pred = torch.argmax(self(batch.to('cuda') / 255.), 1)
 
@@ -211,10 +212,10 @@ class ResDeepLab(DeepLab):
         self.encoder3 = ResDoubleConvBlock(init_features*2, init_features*4)
         self.encoder4 = ResDoubleConvBlock(init_features*4, init_features*8)
         self.encoder5 = ResDoubleConvBlock(init_features*8, init_features*16)
-        self.encoder6 = ResDoubleConvBlock(init_features*16, init_features*16)
+        self.encoder6 = ResDoubleConvBlock(init_features*16, init_features*32)
         
         # Decoder
-        self.decoder6 = UpConvBlock(init_features*16, init_features*16)
+        self.decoder6 = UpConvBlock(init_features*32, init_features*16)
         self.decoder5 = UpConvBlock(init_features*16, init_features*8)
         self.decoder4 = UpConvBlock(init_features*8, init_features*4)
         self.decoder3 = UpConvBlock(init_features*4, init_features*2)
@@ -224,8 +225,9 @@ class ResDeepLab(DeepLab):
         # Metrics
         self.iou = IoU(task='multiclass', num_classes=out_channels, ignore_index=0)
 
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         # Loss
-        self.criterion = CombinedLoss(weight=torch.tensor([1.0, 1.0, 2.0]).to("cuda"), device="cuda")
+        self.criterion = CombinedLoss(weight=torch.tensor([1.0, 1.0, 2.0]).to(device), device=device)
 
     def forward(self, x):
         enc1 = self.encoder1(x)
@@ -241,3 +243,9 @@ class ResDeepLab(DeepLab):
         dec2 = self.decoder2(dec3, enc1)
         out = self.decoder1(dec2)
         return out
+
+
+if __name__ == "__main__":
+    net = ResDeepLab()
+    t = torch.rand(1,1,512,512)
+    net(t)

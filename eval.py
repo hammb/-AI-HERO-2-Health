@@ -29,7 +29,7 @@ if __name__ == "__main__":
     
     # mean instance dice for each image over all images
     print('Computing Scores...')
-    results = compute_all_matches(gt_list, pred_list, load_fn, num_processes=12)
+    results = compute_all_matches(gt_list, pred_list, load_fn, num_processes=64)
     #print('Done')
     score = np.array([np.array(([r[2] for r in results[i]])).mean() for i in range(len(results))]).mean()
     print('Mean Instance Dice:', score)

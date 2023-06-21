@@ -62,7 +62,7 @@ class CellDataset(Dataset):
         img = img.half()
 
         if self.mask_files == None:
-            return img, orig_size, file_name
+            return img, {}, orig_size, file_name
         
         return img, mask, orig_size, file_name
 
