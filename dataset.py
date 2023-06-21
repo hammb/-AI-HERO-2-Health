@@ -59,8 +59,10 @@ class CellDataset(Dataset):
                 mask = transformed['mask'].long()
         
         img = img.half()
-        #img = np.tile(img, (3,1,1))
 
+        if self.mask_files == None:
+            return img, orig_size, file_name
+        
         return img, mask, orig_size, file_name
 
     def __len__(self):

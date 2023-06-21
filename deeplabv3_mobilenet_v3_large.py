@@ -150,14 +150,16 @@ class DeepLab(pl.LightningModule):
         self.eval()
         with torch.no_grad():
             
-            for batch, _, _, file_name in dataloader:
+            for batch, _, file_name in dataloader:
                 # Pass the input tensor through the network to obtain the predicted output tensor
-                pred = torch.argmax(self(batch), 1)
+                pred = torch.argmax(self(batch.to('cuda') / 255.), 1)
+
+                tifffile.imwrite('pred.tif', pred.cpu().detach().numpy().astype(np.uint16))
 
                 for i in range(pred.shape[0]):
                     
                     # convert to instance segmentation
-                    instance_segmentation = convert_semantic_to_instanceseg_mp(np.array(pred[i].unsqueeze(0)).astype(np.uint8), 
+                    instance_segmentation = convert_semantic_to_instanceseg_mp(np.array(pred[i].cpu().unsqueeze(0)).astype(np.uint8), 
                                                                                spacing=(1, 1, 1), num_processes=12,
                                                                                isolated_border_as_separate_instance_threshold=15,
                                                                                small_center_threshold=30).squeeze()
@@ -169,4 +171,4 @@ class DeepLab(pl.LightningModule):
                     save_dir, save_name = os.path.join(pred_dir, file_name[i].split('/')[0]), file_name[i].split('/')[1]
                     os.makedirs(save_dir, exist_ok=True)
                     tifffile.imwrite(os.path.join(save_dir, save_name.replace('.tif', '_256.tif')), 
-                                     resized_instance_segmentation.astype(np.uint64))
+                                     resized_instance_segmentation.astype(np.uint16))
