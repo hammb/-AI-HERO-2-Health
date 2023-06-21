@@ -57,7 +57,7 @@ if __name__ == "__main__":
         for i in range(pred.shape[0]):      
             # convert to instance segmentation
             instance_segmentation = convert_semantic_to_instanceseg_mp(np.array(pred[i].cpu().unsqueeze(0)).astype(np.uint8), 
-                                                                        spacing=(1, 1, 1), num_processes=12,
+                                                                        spacing=(1, 1, 1), num_processes=32,
                                                                         isolated_border_as_separate_instance_threshold=15,
                                                                         small_center_threshold=30).squeeze()
             
