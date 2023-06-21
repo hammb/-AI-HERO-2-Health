@@ -4,6 +4,7 @@ from pathlib import Path
 import albumentations as A
 from albumentations.pytorch.transforms import ToTensorV2
 import numpy as np
+import cv2
 
 class CellDataset(Dataset):
     def __init__(self, root_dir, border_core=False, split="train", fold=None, transform=None):
@@ -88,3 +89,10 @@ def val_transform():
     
     return transform
 
+def test_transform():
+    transform = A.Compose([
+            A.Resize(512, 512, interpolation=cv2.INTER_LINEAR), 
+            ToTensorV2()
+        ])
+    
+    return transform

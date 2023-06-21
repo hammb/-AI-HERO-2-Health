@@ -145,6 +145,12 @@ class DeepLab(pl.LightningModule):
         optimizer = optim.AdamW(self.parameters(), lr=1e-4)
         scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=100)
         return [optimizer], [scheduler]
+    
+    def predict_border_core_logits(self, batch):
+        self.eval()
+        with torch.no_grad():
+            return self(batch.to('cuda') / 255.)
+
 
     def predict_instance_segmentation_from_border_core(self, dataloader, pred_dir='./preds'):
         self.eval()
@@ -153,8 +159,6 @@ class DeepLab(pl.LightningModule):
             for batch, _, file_name in dataloader:
                 # Pass the input tensor through the network to obtain the predicted output tensor
                 pred = torch.argmax(self(batch.to('cuda') / 255.), 1)
-
-                tifffile.imwrite('pred.tif', pred.cpu().detach().numpy().astype(np.uint16))
 
                 for i in range(pred.shape[0]):
                     
