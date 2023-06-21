@@ -11,6 +11,26 @@ from torchmetrics.classification import MulticlassJaccardIndex as IoU
 from acvl_utils.instance_segmentation.instance_as_semantic_seg import convert_semantic_to_instanceseg_mp
 from torchvision.models.segmentation import deeplabv3_mobilenet_v3_large
 
+
+class ResDoubleConvBlock(nn.Module):
+    def __init__(self, in_channels, out_channels):
+        super().__init__()
+        conv1 = nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1)
+        bn1 = nn.BatchNorm2d(out_channels)
+        relu1 = nn.ReLU(inplace=True)
+        conv2 = nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1)
+        bn2 = nn.BatchNorm2d(out_channels)
+        self.residual = nn.Sequential(conv1, bn1, relu1, conv2, bn2)
+        self.identity = nn.Conv2d(in_channels, out_channels, 1, 1, 0, 1)
+        self.relu2 = nn.ReLU(inplace=True)
+
+    def forward(self, x):
+        res = self.residual(x)
+        ident = self.identity(x)
+        out = self.relu2(res+ident)
+        return out
+
+
 class DoubleConvBlock(nn.Module):
     def __init__(self, in_channels, out_channels):
         super(DoubleConvBlock, self).__init__()
@@ -176,3 +196,48 @@ class DeepLab(pl.LightningModule):
                     os.makedirs(save_dir, exist_ok=True)
                     tifffile.imwrite(os.path.join(save_dir, save_name.replace('.tif', '_256.tif')), 
                                      resized_instance_segmentation.astype(np.uint16))
+
+
+class ResDeepLab(DeepLab):
+    def __init__(self, in_channels=1, out_channels=3, init_features=32):
+        super().__init__()
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.init_features = init_features
+        
+        # Encoder
+        self.encoder1 = ResDoubleConvBlock(in_channels, init_features)
+        self.encoder2 = ResDoubleConvBlock(init_features, init_features*2)
+        self.encoder3 = ResDoubleConvBlock(init_features*2, init_features*4)
+        self.encoder4 = ResDoubleConvBlock(init_features*4, init_features*8)
+        self.encoder5 = ResDoubleConvBlock(init_features*8, init_features*16)
+        self.encoder6 = ResDoubleConvBlock(init_features*16, init_features*16)
+        
+        # Decoder
+        self.decoder6 = UpConvBlock(init_features*16, init_features*16)
+        self.decoder5 = UpConvBlock(init_features*16, init_features*8)
+        self.decoder4 = UpConvBlock(init_features*8, init_features*4)
+        self.decoder3 = UpConvBlock(init_features*4, init_features*2)
+        self.decoder2 = UpConvBlock(init_features*2, init_features)
+        self.decoder1 = nn.Conv2d(init_features, out_channels, kernel_size=1)
+
+        # Metrics
+        self.iou = IoU(task='multiclass', num_classes=out_channels, ignore_index=0)
+
+        # Loss
+        self.criterion = CombinedLoss(weight=torch.tensor([1.0, 1.0, 2.0]).to("cuda"), device="cuda")
+
+    def forward(self, x):
+        enc1 = self.encoder1(x)
+        enc2 = self.encoder2(F.max_pool2d(enc1, kernel_size=2, stride=2))
+        enc3 = self.encoder3(F.max_pool2d(enc2, kernel_size=2, stride=2))
+        enc4 = self.encoder4(F.max_pool2d(enc3, kernel_size=2, stride=2))
+        enc5 = self.encoder5(F.max_pool2d(enc4, kernel_size=2, stride=2))
+        enc6 = self.encoder6(F.max_pool2d(enc5, kernel_size=2, stride=2))
+        dec6 = self.decoder6(enc6, enc5)
+        dec5 = self.decoder5(dec6, enc4)
+        dec4 = self.decoder4(dec5, enc3)
+        dec3 = self.decoder3(dec4, enc2)
+        dec2 = self.decoder2(dec3, enc1)
+        out = self.decoder1(dec2)
+        return out
