@@ -5,3 +5,4 @@ albumentations
 pytorch-lightning
 git+https://github.com/MIC-DKFZ/acvl_utils
 imagecodecs
+torchmetrics

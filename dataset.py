@@ -6,18 +6,38 @@ from albumentations.pytorch.transforms import ToTensorV2
 import numpy as np
 
 class CellDataset(Dataset):
-    def __init__(self, root_dir, border_core=False, split="train", transform=None):
+    def __init__(self, root_dir, border_core=False, split="train", fold=None, transform=None):
 
         self.transform = transform
         self.border_core = border_core
 
         root_dir = Path(root_dir)
         if split == "train":
-            self.img_files = sorted(list(root_dir.glob(r'[ab]'+"/*.tif")))
-            self.mask_files = sorted(list(root_dir.glob(r'[ab]'+"_GT/*.tif"))) 
+            if fold == "a":
+                self.img_files = sorted(list(root_dir.glob(r'[bc]'+"/*.tif")))
+                self.mask_files = sorted(list(root_dir.glob(r'[bc]'+"_GT/*.tif"))) 
+                self.meta_files = sorted(list(root_dir.glob(r'[bc]'+'_meta/*.json')))
+            elif fold == "b":
+                self.img_files = sorted(list(root_dir.glob(r'[ac]'+"/*.tif")))
+                self.mask_files = sorted(list(root_dir.glob(r'[ac]'+"_GT/*.tif"))) 
+                self.meta_files = sorted(list(root_dir.glob(r'[ac]'+'_meta/*.json')))
+            else:
+                self.img_files = sorted(list(root_dir.glob(r'[ab]'+"/*.tif")))
+                self.mask_files = sorted(list(root_dir.glob(r'[ab]'+"_GT/*.tif"))) 
+                self.meta_files = sorted(list(root_dir.glob(r'[ab]'+'_meta/*.json')))
         elif split == "val":
-            self.img_files = sorted(list(root_dir.glob(r'[c]'+"/*.tif")))
-            self.mask_files = sorted(list(root_dir.glob(r'[c]'+"_GT/*.tif"))) 
+            if fold == "a":
+                self.img_files = sorted(list(root_dir.glob(r'[a]'+"/*.tif")))
+                self.mask_files = sorted(list(root_dir.glob(r'[a]'+"_GT/*.tif"))) 
+                self.meta_files = sorted(list(root_dir.glob(r'[a]'+'_meta/*.json')))
+            elif fold == "b":
+                self.img_files = sorted(list(root_dir.glob(r'[b]'+"/*.tif")))
+                self.mask_files = sorted(list(root_dir.glob(r'[b]'+"_GT/*.tif"))) 
+                self.meta_files = sorted(list(root_dir.glob(r'[b]'+'_meta/*.json')))
+            else:
+                self.img_files = sorted(list(root_dir.glob(r'[c]'+"/*.tif")))
+                self.mask_files = sorted(list(root_dir.glob(r'[c]'+"_GT/*.tif"))) 
+                self.meta_files = sorted(list(root_dir.glob(r'[c]'+'_meta/*.json')))
         elif split == "test":
             self.img_files = sorted(list(root_dir.glob(r'[de]'+"/*.tif")))
             self.mask_files = None
@@ -39,7 +59,7 @@ class CellDataset(Dataset):
                 mask = transformed['mask'].long()
         
         img = img.half()
-        img = np.tile(img, (3,1,1))
+        #img = np.tile(img, (3,1,1))
 
         return img, mask, orig_size, file_name
 
@@ -50,7 +70,10 @@ class CellDataset(Dataset):
 def train_transform():
     transform = A.Compose([
             A.HorizontalFlip(p=0.5),
+            A.ElasticTransform(p=0.2),
             A.RandomBrightnessContrast(p=0.2),
+            A.RandomGamma(p=0.2),
+            A.GaussNoise(p=0.2),
             ToTensorV2()
         ])
     
