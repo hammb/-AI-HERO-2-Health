@@ -5,3 +5,4 @@ logs
 *.ckpt
 models
 inference_ensemble.py
+pred
