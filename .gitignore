@@ -3,3 +3,6 @@ __pycache__
 logs
 *.tif
 *.ckpt
+models
+inference_ensemble.py
+pred
